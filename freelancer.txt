@@ -1,0 +1,8 @@
+https://www.freelancer.com/projects/C-Programming-CPlusPlus-Programming/program-that-archives-file-you.html
+
+http://stackoverflow.com/questions/15170161/c-winsock-sending-file
+http://www.planet-source-code.com/vb/scripts/ShowCode.asp?txtCodeId=9274&lngWId=3
+http://cboard.cprogramming.com/cplusplus-programming/65497-file-transfer-through-winsock.html
+http://www.codeproject.com/Questions/434061/Winsock-Sending-files
+http://www.dailyfreecode.com/code/example-file-functions-fread-fwrite-2531.aspx
+http://www.tutorialspoint.com/c_standard_library/c_function_fread.htm
