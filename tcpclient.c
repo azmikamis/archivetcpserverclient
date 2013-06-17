@@ -28,7 +28,8 @@ int main(int argc, char **argv)
 
     struct stat fInfo;
     int sendlen, sent;
-    char buffer[20];
+    //char buffer[20];
+    char *buffer;
 
     if ((retval = WSAStartup(0x202, &wsaData)) != 0)
     {
@@ -107,17 +108,20 @@ int main(int argc, char **argv)
 
 		stat(filename, &fInfo);
 
-		// send the file
+        printf("File size %d bytes.\n", fInfo.st_size);
 
+		// send the file
+        buffer = (char*)malloc(8192);
 		sent = 0;
 		while(sent < fInfo.st_size)
 		{
 			sendlen = 0;
-			fread(buffer, 21, 1, file);
-			if((1 + sent) > fInfo.st_size)
+			fread(buffer, 1, 8192, file);
+			if((8192 + sent) > fInfo.st_size)
 			{
-			sendlen = send(conn_socket, buffer, (fInfo.st_size - sent), 0);
-			sent += sendlen;
+    			sendlen = send(conn_socket, buffer, (fInfo.st_size - sent), 0);
+                printf("Client: Sent data \"%s\"\n", buffer);
+    			sent += sendlen;
 				if(sendlen < 1)
 				{
 					free(buffer);
@@ -125,12 +129,13 @@ int main(int argc, char **argv)
 					closesocket(conn_socket);
 					return 0;
 				}
-				if (sendlen != (fInfo.st_size - sent)) fseek(file, (sent - fInfo.st_size), SEEK_CUR);/*nor is this statement*/
+				if (sendlen != (fInfo.st_size - sent))
+                    fseek(file, (sent - fInfo.st_size), SEEK_CUR);/*nor is this statement*/
 			}
 			else
 			{
-			sendlen = send(conn_socket, buffer, 1, 0);
-			sent += sendlen;
+    			sendlen = send(conn_socket, buffer, 8192, 0);
+    			sent += sendlen;
 				if(sendlen < 1)
 				{
 					free(buffer);
@@ -138,48 +143,49 @@ int main(int argc, char **argv)
 					closesocket(conn_socket);
 					return 0;
 				}
-				if (sendlen != 1) fseek(file, (sendlen - 1), SEEK_CUR);/*nor is this one, ill leave them just to be safe*/
+				if (sendlen != 8192)
+                    fseek(file, (sendlen - 8192), SEEK_CUR);/*nor is this one, ill leave them just to be safe*/
 			}
 
 		}
 
-        wsprintf(Buffer, "%s from client #%d", filename, loopcount++);
+        //wsprintf(Buffer, "%s from client #%d", filename, loopcount++);
 
-        retval = send(conn_socket, Buffer, sizeof(Buffer), 0);
-        if (retval == SOCKET_ERROR)
-        {
-            fprintf(stderr,"Client: send() failed: error %d.\n", WSAGetLastError());
-            WSACleanup();
-            return -1;
-        }
-        else
-            printf("Client: send() is OK.\n");
+        //retval = send(conn_socket, Buffer, sizeof(Buffer), 0);
+        //if (retval == SOCKET_ERROR)
+        //{
+        //    fprintf(stderr,"Client: send() failed: error %d.\n", WSAGetLastError());
+        //    WSACleanup();
+        //    return -1;
+        //}
+        //else
+        //    printf("Client: send() is OK.\n");
 
-        printf("Client: Sent data \"%s\"\n", Buffer);
+        //printf("Client: Sent data \"%s\"\n", Buffer);
 
-        retval = recv(conn_socket, Buffer, sizeof(Buffer), 0);
-        if (retval == SOCKET_ERROR)
-        {
-            fprintf(stderr,"Client: recv() failed: error %d.\n", WSAGetLastError());
-            closesocket(conn_socket);
-            WSACleanup();
-            return -1;
-        }
-        else
-            printf("Client: recv() is OK.\n");
+        //retval = recv(conn_socket, Buffer, sizeof(Buffer), 0);
+        //if (retval == SOCKET_ERROR)
+        //{
+        //    fprintf(stderr,"Client: recv() failed: error %d.\n", WSAGetLastError());
+        //    closesocket(conn_socket);
+        //    WSACleanup();
+        //    return -1;
+        //}
+        //else
+        //    printf("Client: recv() is OK.\n");
    
-        if (retval == 0)
-        {
-            printf("Client: Server closed connection.\n");
-            closesocket(conn_socket);
-            WSACleanup();
-            return -1;
-        }
+        //if (retval == 0)
+        //{
+        //    printf("Client: Server closed connection.\n");
+        //    closesocket(conn_socket);
+        //    WSACleanup();
+        //    return -1;
+        //}
 
-        printf("Client: Received %d bytes, data \"%s\" from server.\n", retval, Buffer);
+        //printf("Client: Received %d bytes, data \"%s\" from server.\n", retval, Buffer);
 
-        if (loopcount >= 2)
-            break;
+        //if (loopcount >= 2)
+        //    break;
     }
 
     closesocket(conn_socket);

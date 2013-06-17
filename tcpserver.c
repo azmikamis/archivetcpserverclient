@@ -19,7 +19,9 @@ int main(int argc, char **argv)
     struct sockaddr_in local, from;
     WSADATA wsaData;
     SOCKET listen_socket, msgsock;
-
+    char *buffer;
+    int recved;
+    FILE *file;
     // Request Winsock version 2.2
     if ((retval = WSAStartup(0x202, &wsaData)) != 0)
     {
@@ -80,11 +82,24 @@ int main(int argc, char **argv)
 
         printf("Server: accepted connection from %s, port %d\n", inet_ntoa(from.sin_addr), htons(from.sin_port));
 
-        while(1)
-        {
-        	retval = recv(msgsock, Buffer, sizeof(Buffer), 0);
-        	printf("Server: Received %d bytes, data \"%s\" from client\n", retval, Buffer);
-        }
+        buffer = (char*)malloc(8192);
+        recved = 0;
+        file = fopen("input1.txt", "wb");
+        //while(1)
+        //{
+            while(recved < 1090)
+            {
+            	//retval = recv(msgsock, Buffer, sizeof(Buffer), 0);
+                retval = recv(msgsock, buffer, 8192, 0);
+                recved += retval;
+                fwrite(buffer, 1, retval, file);
+            	printf("Server: Received %d bytes, data \"%s\" from client\n", retval, buffer);
+            }
+        //}
+
+        fclose(file);
+        closesocket(msgsock);
+        free(buffer);
 
         //retval = recv(msgsock, Buffer, sizeof(Buffer), 0);
         //if (retval == SOCKET_ERROR)
