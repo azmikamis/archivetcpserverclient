@@ -8,10 +8,11 @@
 
 #define DEFAULT_PORT 2007
 #define DEFAULT_PROTO SOCK_STREAM // default TCP socket type
+#define BLOCK_SIZE 20
 
 int main(int argc, char **argv)
 {
-	char Buffer[128];
+    char Buffer[128];
     char *server_name= "localhost"; // default to localhost
     unsigned short port = DEFAULT_PORT;
     int i, loopcount;
@@ -30,10 +31,14 @@ int main(int argc, char **argv)
     int sendlen, sent;
     //char buffer[20];
     char *buffer;
+    int offset;
+    int bytesToWrite;
+    int bytesWritten;
+    int bytesRemaining;
 
     if ((retval = WSAStartup(0x202, &wsaData)) != 0)
     {
-    	fprintf(stderr,"Client: WSAStartup() failed with error %d\n", retval);
+        fprintf(stderr,"Client: WSAStartup() failed with error %d\n", retval);
         WSACleanup();
         return -1;
     }
@@ -69,87 +74,109 @@ int main(int argc, char **argv)
 
     while(1)
     {
-	    conn_socket = socket(AF_INET, socket_type, 0); /* Open a socket */
-	    if (conn_socket < 0 )
-	    {
-	        fprintf(stderr,"Client: Error Opening socket: Error %d\n", WSAGetLastError());
-	        WSACleanup();
-	        return -1;
-	    }
-	    else
-	        printf("Client: socket() is OK.\n");
+        conn_socket = socket(AF_INET, socket_type, 0); /* Open a socket */
+        if (conn_socket < 0 )
+        {
+            fprintf(stderr,"Client: Error Opening socket: Error %d\n", WSAGetLastError());
+            WSACleanup();
+            return -1;
+        }
+        else
+            printf("Client: socket() is OK.\n");
 
-	    printf("Client: Client connecting to: %s.\n", hp->h_name);
+        printf("Client: Client connecting to: %s.\n", hp->h_name);
 
-	    if (connect(conn_socket, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR)
-	    {
-	        fprintf(stderr,"Client: connect() failed: %d\n", WSAGetLastError());
-	        WSACleanup();
-	        return -1;
-	    }
-	    else
-	        printf("Client: connect() is OK.\n");
+        if (connect(conn_socket, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR)
+        {
+            fprintf(stderr,"Client: connect() failed: %d\n", WSAGetLastError());
+            WSACleanup();
+            return -1;
+        }
+        else
+            printf("Client: connect() is OK.\n");
 
-	    file = NULL;
-		while(file == NULL)
-		{
-			printf("File to send: ");
-			memset(buf, 0, 256);
-			if(!gets(buf))
-				return 0;
-			//if(buf[0] == 0)
-			//	buf[0] = 'a'; // to prevent fatal error if user enters nothing
-			file = fopen(buf, "rb");
-			if(file == NULL)
-				printf("File could not be opened for reading.\n");
-		}
-		
-		strcpy(filename, buf);
+        file = NULL;
+        while(file == NULL)
+        {
+            printf("File to send: ");
+            memset(buf, 0, 256);
+            if(!gets(buf))
+                return 0;
+            //if(buf[0] == 0)
+            //    buf[0] = 'a'; // to prevent fatal error if user enters nothing
+            file = fopen(buf, "rb");
+            if(file == NULL)
+                printf("File could not be opened for reading.\n");
+        }
+        
+        strcpy(filename, buf);
 
-		stat(filename, &fInfo);
+        stat(filename, &fInfo);
 
         printf("File size %d bytes.\n", fInfo.st_size);
-
-		// send the file
-        buffer = (char*)malloc(8192);
-		sent = 0;
-		while(sent < fInfo.st_size)
-		{
-			sendlen = 0;
-			fread(buffer, 8192, 1, file);
-			if((8192 + sent) > fInfo.st_size)
-			{
-    			sendlen = send(conn_socket, buffer, (fInfo.st_size - sent), 0);
-                printf("Client: Sent data \"%s\"\n", buffer);
-    			sent += sendlen;
-				if(sendlen < 1)
-				{
-					free(buffer);
-					fclose(file);
-					closesocket(conn_socket);
-					return 0;
-				}
-				if (sendlen != (fInfo.st_size - sent))
-                    fseek(file, (sent - fInfo.st_size), SEEK_CUR);/*nor is this statement*/
-			}
-			else
-			{
-    			sendlen = send(conn_socket, buffer, 8192, 0);
-    			sent += sendlen;
-				if(sendlen < 1)
-				{
-					free(buffer);
-					fclose(file);
-					closesocket(conn_socket);
-					return 0;
-				}
-				if (sendlen != 8192)
-                    fseek(file, (sendlen - 8192), SEEK_CUR);/*nor is this one, ill leave them just to be safe*/
-			}
-
-		}
-
+        
+        // send the file
+        bytesRemaining = fInfo.st_size;
+        bytesWritten = 0;
+        
+        while(bytesRemaining > 0)
+        {
+            if(bytesRemaining < BLOCK_SIZE)
+                bytesToWrite = bytesRemaining;
+            else
+                bytesToWrite = BLOCK_SIZE;
+            
+            buffer = (char*)malloc(bytesToWrite);
+            fread(buffer, 1, bytesToWrite, file);
+            send(conn_socket, buffer, bytesToWrite, 0);
+            bytesRemaining -= bytesToWrite;
+            free(buffer);
+        }
+        
         fclose(file);
+        closesocket(conn_socket);
+        printf("Buffer content: \"%s\"\n", buffer);
+
+        // send the file
+        //buffer = (char*)malloc(8192);
+        //sent = 0;
+        //while(sent < fInfo.st_size)
+        //{
+        //    sendlen = 0;
+        //    fread(buffer, 1, 8192, file);
+        //    if((8192 + sent) > fInfo.st_size)
+        //    {
+        //        sendlen = send(conn_socket, buffer, (fInfo.st_size - sent), 0);
+        //        printf("Client: Sent data \"%s\"\n", buffer);
+        //        sent += sendlen;
+        //        if(sendlen < 1)
+        //        {
+        //            free(buffer);
+        //            fclose(file);
+        //            closesocket(conn_socket);
+        //            return 0;
+        //        }
+        //        if (sendlen != (fInfo.st_size - sent))
+        //            fseek(file, (sent - fInfo.st_size), SEEK_CUR);/*nor is this statement*/
+        //    }
+        //    else
+        //    {
+        //        sendlen = send(conn_socket, buffer, 8192, 0);
+        //        sent += sendlen;
+        //        if(sendlen < 1)
+        //        {
+        //            free(buffer);
+        //            fclose(file);
+        //            closesocket(conn_socket);
+        //            return 0;
+        //        }
+        //        if (sendlen != 8192)
+        //            fseek(file, (sendlen - 8192), SEEK_CUR);/*nor is this one, ill leave them just to be safe*/
+        //    }
+
+        //}
+
+        //fclose(file);
 
         //wsprintf(Buffer, "%s from client #%d", filename, loopcount++);
 
@@ -193,5 +220,5 @@ int main(int argc, char **argv)
     closesocket(conn_socket);
     WSACleanup();
 
-	return 0;
+    return 0;
 }

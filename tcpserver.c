@@ -10,7 +10,7 @@
 
 int main(int argc, char **argv)
 {
-	char Buffer[128];
+    char Buffer[128];
     char *ip_address= NULL;
     unsigned short port=DEFAULT_PORT;
     int fromlen;
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
         return -1;
     }
     else
-    	printf("Server: WSAStartup() is OK.\n");
+        printf("Server: WSAStartup() is OK.\n");
 
     local.sin_family = AF_INET;
     local.sin_addr.s_addr = (!ip_address) ? INADDR_ANY : inet_addr(ip_address);
@@ -68,7 +68,7 @@ int main(int argc, char **argv)
 
     while(1)
     {
-    	fromlen = sizeof(from);
+        fromlen = sizeof(from);
 
         msgsock = accept(listen_socket, (struct sockaddr*)&from, &fromlen);
         if (msgsock == INVALID_SOCKET)
@@ -84,16 +84,16 @@ int main(int argc, char **argv)
 
         buffer = (char*)malloc(8192);
         recved = 0;
-        file = fopen("input1.txt", "w");
+        file = fopen("input1.txt", "wb");
         //while(1)
         //{
             while(recved < 1090)
             {
-            	//retval = recv(msgsock, Buffer, sizeof(Buffer), 0);
+                //retval = recv(msgsock, Buffer, sizeof(Buffer), 0);
                 retval = recv(msgsock, buffer, 8192, 0);
                 recved += retval;
-                fwrite(buffer, 1, 8192, file);
-            	printf("Server: Received %d bytes, data \"%s\" from client\n", retval, buffer);
+                fwrite(buffer, 1, retval, file);
+                printf("Server: Received %d bytes, data \"%s\" from client\n", retval, buffer);
             }
         //}
 
@@ -113,7 +113,7 @@ int main(int argc, char **argv)
 
         //if (retval == 0)
         //{
-        //	printf("Server: Client closed connection.\n");
+        //    printf("Server: Client closed connection.\n");
         //    closesocket(msgsock);
         //    continue;
         //}
@@ -135,5 +135,5 @@ int main(int argc, char **argv)
     }
 
 
-	return 0;
+    return 0;
 }
