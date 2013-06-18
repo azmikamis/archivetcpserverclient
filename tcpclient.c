@@ -103,7 +103,7 @@ int main(int argc, char **argv)
 			if(file == NULL)
 				printf("File could not be opened for reading.\n");
 		}
-		fclose(file);
+		
 		strcpy(filename, buf);
 
 		stat(filename, &fInfo);
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 		while(sent < fInfo.st_size)
 		{
 			sendlen = 0;
-			fread(buffer, 1, 8192, file);
+			fread(buffer, 8192, 1, file);
 			if((8192 + sent) > fInfo.st_size)
 			{
     			sendlen = send(conn_socket, buffer, (fInfo.st_size - sent), 0);
@@ -148,6 +148,8 @@ int main(int argc, char **argv)
 			}
 
 		}
+
+        fclose(file);
 
         //wsprintf(Buffer, "%s from client #%d", filename, loopcount++);
 

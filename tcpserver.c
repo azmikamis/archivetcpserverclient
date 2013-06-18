@@ -84,7 +84,7 @@ int main(int argc, char **argv)
 
         buffer = (char*)malloc(8192);
         recved = 0;
-        file = fopen("input1.txt", "wb");
+        file = fopen("input1.txt", "w");
         //while(1)
         //{
             while(recved < 1090)
@@ -92,7 +92,7 @@ int main(int argc, char **argv)
             	//retval = recv(msgsock, Buffer, sizeof(Buffer), 0);
                 retval = recv(msgsock, buffer, 8192, 0);
                 recved += retval;
-                fwrite(buffer, 1, retval, file);
+                fwrite(buffer, 1, 8192, file);
             	printf("Server: Received %d bytes, data \"%s\" from client\n", retval, buffer);
             }
         //}
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
         //printf("Server: program from the same computer or other computer...\n");
         //closesocket(msgsock);
 
-        continue;
+        break;
     }
 
 
