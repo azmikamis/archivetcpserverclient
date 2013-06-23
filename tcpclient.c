@@ -12,7 +12,6 @@
 
 int main(int argc, char **argv)
 {
-    char Buffer[128];
     char *server_name= "localhost"; // default to localhost
     unsigned short port = DEFAULT_PORT;
     int i, loopcount;
@@ -29,8 +28,8 @@ int main(int argc, char **argv)
 
     struct stat fInfo;
     int sendlen, sent;
-    //char buffer[20];
-    char *buffer;
+    char recvbuffer[128];
+    char *sendbuffer;
     int offset;
     int bytesToWrite;
     int bytesWritten;
@@ -112,10 +111,27 @@ int main(int argc, char **argv)
         strcpy(filename, buf);
 
         stat(filename, &fInfo);
-
+        printf("File name %s.\n", filename);
         printf("File size %d bytes.\n", fInfo.st_size);
         
-        // send the file
+        // send file name
+        bytesToWrite = strlen(filename) + 1;
+        sendbuffer = (char*)malloc(bytesToWrite);
+        strcpy(sendbuffer, filename);
+        send(conn_socket, sendbuffer, bytesToWrite, 0);
+
+        retval = recv(conn_socket, recvbuffer, sizeof(recvbuffer), 0);
+        if (retval == SOCKET_ERROR)
+        {
+            fprintf(stderr,"Client: recv() failed: error %d.\n", WSAGetLastError());
+            closesocket(conn_socket);
+            WSACleanup();
+            return -1;
+        }
+        else
+            printf("Client: Server received filename OK.\n");
+
+        // send file
         bytesRemaining = fInfo.st_size;
         bytesWritten = 0;
         
@@ -126,16 +142,16 @@ int main(int argc, char **argv)
             else
                 bytesToWrite = BLOCK_SIZE;
             
-            buffer = (char*)malloc(bytesToWrite);
-            fread(buffer, 1, bytesToWrite, file);
-            send(conn_socket, buffer, bytesToWrite, 0);
+            sendbuffer = (char*)malloc(bytesToWrite);
+            fread(sendbuffer, 1, bytesToWrite, file);
+            send(conn_socket, sendbuffer, bytesToWrite, 0);
             bytesRemaining -= bytesToWrite;
-            free(buffer);
+            free(sendbuffer);
         }
         
         fclose(file);
         closesocket(conn_socket);
-        printf("Buffer content: \"%s\"\n", buffer);
+        printf("Buffer content: \"%s\"\n", sendbuffer);
 
         // send the file
         //buffer = (char*)malloc(8192);

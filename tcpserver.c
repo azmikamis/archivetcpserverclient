@@ -82,6 +82,36 @@ int main(int argc, char **argv)
 
         printf("Server: accepted connection from %s, port %d\n", inet_ntoa(from.sin_addr), htons(from.sin_port));
 
+        retval = recv(msgsock, Buffer, sizeof(Buffer), 0);
+        if (retval == SOCKET_ERROR)
+        {
+            fprintf(stderr,"Server: recv() failed: error %d\n", WSAGetLastError());
+            closesocket(msgsock);
+            continue;
+        }
+        else
+            printf("Server: recv() is OK.\n");
+
+        printf("Server: Filename %s.\n", Buffer);
+
+        if (retval == 0)
+        {
+            printf("Server: Client closed connection.\n");
+            closesocket(msgsock);
+            continue;
+        }
+
+        //free(Buffer);
+
+        strcpy(Buffer, "Filename received");
+
+        retval = send(msgsock, Buffer, sizeof(Buffer), 0);
+        if (retval == SOCKET_ERROR)
+            fprintf(stderr,"Server: send() failed: error %d\n", WSAGetLastError());
+        else
+            printf("Server: send() is OK.\n");
+
+
         buffer = (char*)malloc(8192);
         recved = 0;
         file = fopen("input1.txt", "wb");
